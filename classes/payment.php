@@ -44,9 +44,9 @@ class payment extends requester {
     protected $order;
     /**
      * The gateway configuration
-     * @var \stdClass
+     * @var config
      */
-    protected $config;
+    protected config $config;
     /**
      * Description of the item.
      * @var string
@@ -86,7 +86,7 @@ class payment extends requester {
 
         $this->set_billing_data();
 
-        parent::__construct($config->apikey, $config->public_key, $config->private_key);
+        parent::__construct($config->apikey, $config->publickey, $config->privatekey);
     }
 
     /**
@@ -191,6 +191,7 @@ class payment extends requester {
             $status['pm_orderid']    = $intention->id;
             $status['amount_cent']   = $intention->intention_detail->amount;
 
+            self::log("Intention payment methods returned: ", $intention->payment_methods);
             $this->order->set_pm_orderid($intention->id, false);
             $this->order->update_status('intended');
         } else {
@@ -205,7 +206,6 @@ class payment extends requester {
      * @return array
      */
     public function create_payment() {
-        global $USER;
         $price = (int)(string)$this->amountcents;
 
         $data  = [
@@ -221,11 +221,12 @@ class payment extends requester {
                 'paymentarea'    => $this->order->get_paymentarea(),
                 'component'      => $this->order->get_component(),
                 'itemid'         => $this->order->get_itemid(),
-                'userid'         => $USER->id,
+                'userid'         => $this->order->get_userid(),
             ],
             'special_reference' => $this->order->get_id() . '_' . time(),
         ];
 
+        static::log("Integrations sent in intention API:", $data['payment_methods']);
         return $this->create_Intention($data);
     }
 
@@ -239,10 +240,10 @@ class payment extends requester {
      */
     public function get_intention_url() {
         $cost = $this->order->get_raw_cost();
-        if ($cost < $this->config->minimum_allowed ?? 0) {
+        if ($cost < ($this->config->minimumallowed ?? 0)) {
             return [
                 'success' => false,
-                'error'   => get_string('low_payment', 'paygw_paymob', $this->config->minimum_allowed),
+                'error'   => get_string('low_payment', 'paygw_paymob', $this->config->minimumallowed),
             ];
         }
 
@@ -283,7 +284,7 @@ class payment extends requester {
      * @return int[]
      */
     private function get_integration_ids_array() {
-        $allitegrations = explode(',' , $this->config->integration_ids_hidden);
+        $allitegrations = $this->config->integrationidshidden;
 
         $matchingids    = [];
         $integrationids = [];
@@ -293,7 +294,7 @@ class payment extends requester {
             $id    = trim($parts[0]);
             if (isset($parts[2])) {
                 $currency = trim(substr($parts[2], strpos($parts[2], '(') + 1, -2));
-                if (in_array($id, $this->config->integration_ids) && $currency === $this->order->get_currency()) {
+                if (in_array($id, $this->config->integrationids) && $currency === $this->order->get_currency()) {
                     $matchingids[] = $id;
                 }
             }
@@ -309,7 +310,7 @@ class payment extends requester {
         }
 
         if (empty($integrationids) ) {
-            foreach ($this->config->integration_ids as $id) {
+            foreach ($this->config->integrationids as $id) {
                 $id = (int)$id;
                 if ($id > 0) {
                     array_push($integrationids, $id);

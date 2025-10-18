@@ -274,14 +274,15 @@ class order {
     }
     /**
      * Get the amount in cents
-     * @return float
+     * @return int
      */
-    public function get_amount_cents() {
-        $islegacy = !empty($this->get_gateway_config()->legacy);
+    public function get_amount_cents(): int {
+        $config = $this->get_gateway_config();
+        $islegacy = !empty($config->legacy);
         if ($islegacy) {
             $country = 'egy';
         } else {
-            $country = utils::get_country_code($this->get_gateway_config()->public_key);
+            $country = utils::get_country_code($config->publickey);
         }
 
         if ($country == 'omn') {
@@ -342,16 +343,10 @@ class order {
 
     /**
      * Get the payment configurations
-     * @return \stdClass
+     * @return config
      */
-    public function get_gateway_config() {
-        $config = (object)helper::get_gateway_configuration($this->component,
-                                                            $this->paymentarea,
-                                                            $this->itemid,
-                                                            'paymob');
-        $config->integration_ids = json_decode($config->integration_ids);
-
-        return $config;
+    public function get_gateway_config(): config {
+        return new config($this->component, $this->paymentarea, $this->itemid);
     }
 
     /**
@@ -502,7 +497,7 @@ class order {
     public function get_order_notes_html() {
         global $OUTPUT;
         $notes = $this->get_order_notes();
-        $url = utils::get_api_url($this->get_gateway_config()->public_key ?? '');
+        $url = utils::get_api_url($this->get_gateway_config()->publickey ?? '');
         foreach ($notes as $note) {
             $tempdata = [
                 'integrationid'   => $note->integrationid,

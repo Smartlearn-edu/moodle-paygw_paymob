@@ -85,7 +85,7 @@ class callback {
 
         $config = $order->get_gateway_config();
 
-        $hmackey = $config->hmac_hidden;
+        $hmackey = $config->hmachidden;
         if (security::verify_hmac($hmackey, $jsondata, null, security::filter_var('hmac', 'REQUEST'))) {
 
             $status = utils::get_order_status($obj);
@@ -138,13 +138,14 @@ class callback {
             die("intension amount are not matched for order : $orderid");
         }
 
-        $country = utils::get_country_code($order->get_gateway_config()->public_key);
+        $config = $order->get_gateway_config();
+        $country = utils::get_country_code($config->publickey);
         $cents = 100;
         if ('omn' == $country) {
             $cents = 1000;
         }
 
-        if (!security::verify_hmac($order->get_gateway_config()->hmac_hidden, $jsondata,
+        if (!security::verify_hmac($config->hmachidden, $jsondata,
                     [
                         'id'     => $orderintensionid,
                         'amount' => $orderamount,
@@ -190,7 +191,7 @@ class callback {
 
         $config = $order->get_gateway_config();
 
-        if (!security::verify_hmac($config->hmac_hidden, $_GET)) {
+        if (!security::verify_hmac($config->hmachidden, $_GET)) {
             redirect(new \moodle_url('/'), get_string('verification_failed', 'paygw_paymob'), null, 'error');
             exit();
         }

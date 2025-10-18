@@ -34,8 +34,18 @@ class utils {
      * @return array
      */
     public static function get_integration_ids_from_string($integrationids, $returndata = false) {
+        return self::get_integration_ids_from_array(explode(',', $integrationids), $returndata);
+    }
+    /**
+     * Parse array of integration ids from stored string
+     * @param array $integrationids
+     * @param bool $returndata if true the function return array or arrays of detailed data
+     *                         for each integration id
+     *                         else it return array of strings to be uses as options for integrations
+     * @return array
+     */
+    public static function get_integration_ids_from_array($integrationids, $returndata = false) {
         $output = [];
-        $integrationids = explode(',' , $integrationids);
         foreach ($integrationids as $entry) {
             $parts = explode( ':', $entry );
             // Parts in order " id : name (type : currency )".
@@ -68,18 +78,18 @@ class utils {
 
     /**
      * Get the enabled payment methods
-     * @param \stdClass $config the payment gateway configuration
+     * @param config $config the payment gateway configuration
      * @param string $currency
      * @return array[int] keyed by method type
      */
-    public static function get_payment_methods($config, $currency) {
-        $all = $config->integration_ids_hidden;
-        $integrations = self::get_integration_ids_from_string($all, true);
+    public static function get_payment_methods(config $config, string $currency) {
+        $all = $config->integrationidshidden;
+        $integrations = self::get_integration_ids_from_array($all, true);
 
-        $ids = $config->integration_ids;
+        $ids = $config->integrationids;
 
         $out = [];
-        $types = ['card', 'wallet', 'aman'];
+        $types = ['card', 'wallet', 'aman', 'kiosk'];
         foreach ($integrations as $key => $object) {
             if (!in_array($key, $ids)
                 || $object->currency !== $currency) {
@@ -210,7 +220,7 @@ class utils {
      * @param string $code
      * @return string live or test
      */
-    public static function get_mode($code) {
+    public static function get_mode(string $code): string {
         return (string)substr($code, 7, 4);
     }
 
@@ -263,10 +273,7 @@ class utils {
     public static function match_countries($privatekey, $publickey) {
         $pubkey = self::get_country_code($publickey);
         $seckey = self::get_country_code($privatekey);
-        if ($pubkey !== $seckey) {
-            return false;
-        }
-        return true;
+        return $pubkey === $seckey;
     }
 
     /**

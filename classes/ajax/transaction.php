@@ -156,7 +156,6 @@ class transaction extends \external_api {
      * @return array
      */
     public static function void_transaction($id) {
-        global $CFG;
         $params = self::validate_parameters(self::void_transaction_parameters(), ['id' => $id]);
 
         require_login(null, false);
@@ -196,7 +195,6 @@ class transaction extends \external_api {
      * @return array
      */
     public static function refund_transaction($id, $amount) {
-        global $CFG;
         $params = ['id' => $id, 'amount' => $amount];
         $params = self::validate_parameters(self::refund_transaction_parameters(), $params);
 
